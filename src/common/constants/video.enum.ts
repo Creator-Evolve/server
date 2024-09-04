@@ -20,12 +20,10 @@ Generate total 4 short form video of length no longer than 1 minute
 
 // Complete the following steps for each extracted segment:
 // Summary: Provide a summary
-// Timeline: Specify the time range (e.g., 0:00 - 0:30) 
+// Timeline: Specify the time range (e.g., 0:00 - 0:30)
 // Title: Suggest a title for the video.
 
 // `;
-
-
 
 export interface IFormattedDataResponse {
   segments: {
@@ -36,8 +34,22 @@ export interface IFormattedDataResponse {
   }[];
 }
 
+export enum VIDEO_QUALITY {
+  HIGH = 'high',
+  LOW = 'low',
+}
 
-export enum VIDEO_QUALITY{
-  HIGH="high",
-  LOW="low"
+export interface IContextualSegment {
+  start_time: string;
+  end_time: string;
+  duration: number;
+  context: string;
+}
+
+export interface IContextualVideoSegment {
+  title: string;
+  duration: number;
+  explanation: string;
+  summary: string;
+  segments: IContextualSegment[];
 }

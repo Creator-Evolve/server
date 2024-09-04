@@ -11,6 +11,7 @@ import { Dubbing } from '../media/dubbing.schema';
 import { Audio } from '../media/audio.schema';
 import { Voice } from '../media/voice.schema';
 import { Research } from '../research/research.schema';
+import { Image } from '../media/image.schema';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -76,6 +77,9 @@ export class User extends Document {
 
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Dubbing' }] })
   dubbings: Dubbing[];
+
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Image' }] })
+  images: Image[];
 
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Research' }] })
   researchs: Research[];

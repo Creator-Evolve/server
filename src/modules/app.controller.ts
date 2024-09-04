@@ -1,6 +1,7 @@
 import { ROLE } from '@/common/constants/roles.enum';
 import { Roles } from '@/common/decorators/role.decorator';
 import {
+  Body,
   Controller,
   Post,
   UploadedFile,
@@ -27,5 +28,11 @@ export class AppController {
 
     file.filename = modifiedFilename;
     return this.appService.uploadFile(file);
+  }
+
+  @Post('/url-for-upload')
+  @Roles(ROLE.USER)
+  async getUrlForUpload(@Body() body: { filename: string }) {
+    return this.appService.getUrlForUpload(body.filename);
   }
 }

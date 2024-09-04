@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { OpenAIService } from './services/openai.service';
+import { ClaudeService } from './services/claude.service';
 import { StorageModule } from '@/common/storage/storage.module';
 
 @Module({
   imports: [StorageModule],
-  providers: [OpenAIService],
-  exports: [OpenAIService],
+  exports: [ClaudeService],
+  providers: [ClaudeService],
 })
-export class OpenAIModule {}
+export class ClaudeModule {}

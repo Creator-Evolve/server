@@ -32,7 +32,7 @@ export class AppService {
 
       const preSignedUrl = this.storageService.get(s3FilePath);
 
-      return preSignedUrl;
+      return { url: preSignedUrl, key: s3FilePath };
     } catch (error: any) {
       this.loggerService.error(
         JSON.stringify({
@@ -44,7 +44,7 @@ export class AppService {
         cause: error,
       });
     }
-  }  
+  }
 
   private bufferToStream(buffer: Buffer): Readable {
     this.loggerService.log(
@@ -54,5 +54,45 @@ export class AppService {
     stream.push(buffer);
     stream.push(null); // Indicates the end of the stream
     return stream;
+  }
+
+  async getUrlForUpload(fileName: string) {
+    try {
+      // Log the start of the URL generation process
+      this.loggerService.log(
+        JSON.stringify({
+          message: 'getUrlForUpload: Start generating upload URL',
+          fileName,
+        }),
+      );
+
+      // Generate the presigned upload URL
+      const url = await this.storageService.generateUploadUrl(fileName);
+
+      // Log the successful generation of the URL
+      this.loggerService.log(
+        JSON.stringify({
+          message: 'getUrlForUpload: Successfully generated upload URL',
+          fileName,
+          url,
+        }),
+      );
+
+      return url;
+    } catch (error: any) {
+      // Log the error that occurred during URL generation
+      this.loggerService.log(
+        JSON.stringify({
+          message: 'getUrlForUpload: Error generating upload URL',
+          fileName,
+          error: error.message,
+        }),
+      );
+
+      // Throw an HTTP exception with additional details
+      throw new HttpException('Server failed', HttpStatus.BAD_GATEWAY, {
+        cause: error,
+      });
+    }
   }
 }

@@ -93,7 +93,6 @@ export class TwelveLabsService {
 
       return taskIds;
     } catch (error) {
-      console.log({ error });
       this.loggerService.error(
         JSON.stringify({
           message: `uploadVideosTask: Error occured`,

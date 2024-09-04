@@ -21,6 +21,9 @@ export const aiServices = registerAs('AI_SERVICE', () => ({
   PERPLEXITY_API_KEY: process.env['PERPLEXITY_API_KEY'],
   PERPLEXITY_API_URL: process.env['PERPLEXITY_API_URL'],
   PERPLEXITY_DEFAULT_MODEL: process.env['PERPLEXITY_DEFAULT_MODEL'],
+  STABLE_DIFFUSION_API_KEY: process.env['STABLE_DIFFUSION_API_KEY'],
+  STABLE_DIFFUSION_API_URL: process.env['STABLE_DIFFUSION_API_URL'],
+  ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
 }));
 
 export const cloudServices = registerAs('SERVICE', () => ({

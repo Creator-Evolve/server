@@ -123,16 +123,16 @@ export class UserService {
         );
 
       let videos = user.videos;
-      if (tl) {
-        videos = videos.filter(
-          (video) =>
-            video.tl_task_id !== undefined && video.tl_task_id !== null,
-        );
-      }
+      // if (tl) {
+      //   videos = videos.filter(
+      //     (video) =>
+      //       video.tl_task_id !== undefined && video.tl_task_id !== null,
+      //   );
+      // }
 
       return videos;
     } catch (error) {
-      console.log({ error });
+      throw new Error(JSON.stringify(error));
     }
   }
 
@@ -158,7 +158,7 @@ export class UserService {
 
       return audios;
     } catch (error) {
-      console.log({ error });
+      throw new Error(JSON.stringify(error));
     }
   }
 

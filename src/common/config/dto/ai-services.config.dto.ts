@@ -7,6 +7,10 @@ export class AIServiceConfigDTO {
 
   @IsString()
   @IsNotEmpty()
+  ANTHROPIC_API_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
   TWELVE_LABS_API_KEY: string;
 
   @IsString()
@@ -48,4 +52,13 @@ export class AIServiceConfigDTO {
   @IsString()
   @IsNotEmpty()
   PERPLEXITY_DEFAULT_MODEL: string;
+
+
+  @IsString()
+  @IsNotEmpty()
+  STABLE_DIFFUSION_API_KEY: string;
+
+  @IsString()
+  @IsNotEmpty()
+  STABLE_DIFFUSION_API_URL: string;
 }
