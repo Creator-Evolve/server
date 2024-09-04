@@ -22,6 +22,8 @@ import { diskStorage } from 'multer';
 import { editFileName } from '../utils/editFileName';
 import { Roles } from '@/common/decorators/role.decorator';
 import { ROLE } from '@/common/constants/roles.enum';
+import { ExtractShortContentDto } from '../dto/extract-short-content.dto';
+import { AddSubtitleDto } from '../dto/add-subtitle.dto';
 
 @Controller('media/videos')
 @UseGuards(AuthGuard)
@@ -59,10 +61,7 @@ export class VideoController {
 
   @Post('upload/url')
   @Roles(ROLE.USER)
-  async uploadVideoUrl(
-    @Req() req: any,
-    @Body() body: UploadVideoDTO
-  ) {
+  async uploadVideoUrl(@Req() req: any, @Body() body: UploadVideoDTO) {
     return this.videoService.uploadVideoUrl(req.user.sub, body);
   }
 
@@ -147,23 +146,39 @@ export class VideoController {
     );
   }
 
-  @Get('extract/:id')
+  @Post('extract/:id')
   @Roles(ROLE.USER)
-  async extractShortContent(
+  async extractShortContent2(
     @Param('id') videoId: string,
-    @Query('prompt') prompt?: string,
-    @Query('crop') crop?: string,
-    @Query('aspect') aspect?: string,
+    @Body() body: ExtractShortContentDto,
   ) {
-    const parsedPrompt = prompt ? decodeURIComponent(prompt) : null;
-    const parsedCropValue = crop ? JSON.parse(decodeURIComponent(crop)) : null;
+    return this.videoService.extractShortContent(videoId, body);
+  }
 
-    return this.videoService.extractShortContent(
+  @Post('add-subtitle/:id')
+  @Roles(ROLE.USER)
+  async addSubtitleToTheVideo(
+    @Param('id') shortId: string,
+    @Body() body: AddSubtitleDto,
+  ) {
+    return this.videoService.addSubtitleToShort(shortId, body);
+  }
+
+  @Post('extract/frames/:id')
+  async extractFramesFromVideoSegment(
+    @Param('id') videoId: string,
+    @Body() body: { start: number; end: number },
+  ) {
+    return this.videoService.extractFramesFromVideoSegment(
       videoId,
-      parsedPrompt,
-      parsedCropValue,
-      aspect,
+      body.start,
+      body.end,
     );
+  }
+
+  @Get('/:id/shorts')
+  async getAllGeneratedShortOfVideo(@Param('id') videoId: string) {
+    return this.videoService.getAllGeneratedShortOfVideo(videoId);
   }
 
   @Post('youtube/upload')

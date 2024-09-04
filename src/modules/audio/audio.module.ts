@@ -27,6 +27,10 @@ import {
   AudioAnalyzeSchema,
 } from '@/db/schemas/media/analyze-audio.schema';
 import { OpenAIModule } from '@/libs/openai/openai.module';
+import {
+  VoiceChange,
+  VoiceChangeSchema,
+} from '@/db/schemas/media/voice-change.schema';
 
 @Module({
   imports: [
@@ -41,6 +45,10 @@ import { OpenAIModule } from '@/libs/openai/openai.module';
       {
         name: Audio.name,
         schema: AudioSchema,
+      },
+      {
+        name: VoiceChange.name,
+        schema: VoiceChangeSchema,
       },
       {
         name: Dubbing.name,
@@ -76,7 +84,7 @@ import { OpenAIModule } from '@/libs/openai/openai.module';
     UserModule,
     MailModule,
     DolbyModule,
-    OpenAIModule
+    OpenAIModule,
   ],
   controllers: [AudioController],
   providers: [AudioService, JwtService, DubbingConsumer],

@@ -31,6 +31,9 @@ import { ProfessionalVoiceCloneInquiryDto } from '../dto/professiona-voice-clone
 import { EnhanceAudioDto } from '../dto/enhance-audio.dto';
 import { IDolbyContenType } from '@/libs/dolby/enum';
 
+import { Request } from 'express';
+import { SpeechToSpeechDTO } from '../dto/speech-to-speech';
+
 @Controller('media/audios')
 @UseGuards(AuthGuard)
 export class AudioController {
@@ -120,6 +123,16 @@ export class AudioController {
   @Post('/text-to-speech')
   async textToSpeech(@Req() req: any, @Body() body: TextToSpeechDTO) {
     return this.audioService.textToSpeech(req.user.sub, body);
+  }
+
+  @Get('/voice-changed/list')
+  async getAllVoicesChangesList(@Req() req: Request) {
+    return this.audioService.getVoiceChangesList(req.user.sub);
+  }
+
+  @Post('/speech-to-speech')
+  async speechToSpeech(@Req() req: Request, @Body() body: SpeechToSpeechDTO) {
+    return this.audioService.speechToSpeech(req.user.sub, body);
   }
 
   @Get('/dubbing/all')

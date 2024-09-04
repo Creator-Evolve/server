@@ -10,6 +10,8 @@ import * as FormData from 'form-data';
 import { MODEL_ID } from '../enum';
 import { AxiosRequestConfig } from 'axios';
 import { createReadStream } from 'fs';
+import { v4 as uuid } from 'uuid';
+import { extractExtension } from 'utils';
 
 interface ElevenLabDubRequest {
   url: string;
@@ -19,6 +21,11 @@ interface ElevenLabDubRequest {
   start_time: number;
   end_time: number;
   source_lang: string;
+}
+
+export enum SPEECH_TO_SPEECH_MODEL {
+  Eleven_Multilingual_sts_v2 = 'eleven_multilingual_sts_v2',
+  Eleven_English_sts_v2 = 'eleven_english_sts_v2',
 }
 
 export interface ElevenLabsDubResponse {
@@ -33,6 +40,80 @@ export interface ElevenLabsTextToSpeechRequest {
   similarity_boost?: number;
   style?: number;
   use_speaker_boost?: boolean;
+}
+
+export enum ELEVEN_LABS_SPEECH_TO_SPEECH_OUTPUT_FORMAT {
+  /**
+   * mp3 format with a 22.05kHz sample rate at 32kbps.
+   * Suitable for low-quality audio output.
+   */
+  MP3_22050_32 = 'mp3_22050_32',
+
+  /**
+   * mp3 format with a 44.1kHz sample rate at 32kbps.
+   * Low-quality audio output with a higher sample rate.
+   */
+  MP3_44100_32 = 'mp3_44100_32',
+
+  /**
+   * mp3 format with a 44.1kHz sample rate at 64kbps.
+   * Moderate quality audio output.
+   */
+  MP3_44100_64 = 'mp3_44100_64',
+
+  /**
+   * mp3 format with a 44.1kHz sample rate at 96kbps.
+   * Higher quality audio output.
+   */
+  MP3_44100_96 = 'mp3_44100_96',
+
+  /**
+   * mp3 format with a 44.1kHz sample rate at 128kbps.
+   * Default output format providing good quality audio.
+   */
+  MP3_44100_128 = 'mp3_44100_128',
+
+  /**
+   * mp3 format with a 44.1kHz sample rate at 192kbps.
+   * High-quality audio output. Requires subscription to Creator tier or above.
+   */
+  MP3_44100_192 = 'mp3_44100_192',
+
+  /**
+   * PCM format (S16LE) with a 16kHz sample rate.
+   * Suitable for raw audio data processing.
+   */
+  PCM_16000 = 'pcm_16000',
+
+  /**
+   * PCM format (S16LE) with a 22.05kHz sample rate.
+   * Higher sample rate for raw audio data.
+   */
+  PCM_22050 = 'pcm_22050',
+
+  /**
+   * PCM format (S16LE) with a 24kHz sample rate.
+   * Provides a good balance between quality and file size.
+   */
+  PCM_24000 = 'pcm_24000',
+
+  /**
+   * PCM format (S16LE) with a 44.1kHz sample rate.
+   * High-quality raw audio data. Requires subscription to Pro tier or above.
+   */
+  PCM_44100 = 'pcm_44100',
+
+  /**
+   * μ-law (u-law) format with an 8kHz sample rate.
+   * Commonly used in telephony applications like Twilio audio inputs.
+   */
+  ULAW_8000 = 'ulaw_8000',
+}
+
+export interface ElevenLabsSpeechToSpeechRequest {
+  voice_id: string;
+  output_format: ELEVEN_LABS_SPEECH_TO_SPEECH_OUTPUT_FORMAT;
+  audio_path: string;
 }
 
 export interface InstantVoiceCloneRequest {
@@ -179,8 +260,6 @@ export class ElevenLabsService {
 
       return resp;
     } catch (error: any) {
-      console.log({ error });
-      console.log({ error: error.response.data });
       this.loggerService.log(
         JSON.stringify({
           message: `addSharedVoiceInLibrary: Error occurred`,
@@ -277,7 +356,7 @@ export class ElevenLabsService {
     } catch (error: any) {
       this.loggerService.log(
         JSON.stringify({
-          message: `getVoicesList: Error occured`,
+          message: `downloadDubbedFile: Error occured`,
           data: error,
         }),
       );
@@ -352,6 +431,69 @@ export class ElevenLabsService {
       this.loggerService.error(
         JSON.stringify({
           message: 'createTextToSpeech: Error occurred',
+          error: error.message,
+          response: error.response?.data,
+        }),
+      );
+      throw new Error(error.message);
+    }
+  }
+
+  async createSpeechToSpeech(body: ElevenLabsSpeechToSpeechRequest) {
+    const {
+      audio_path,
+      voice_id,
+      output_format = ELEVEN_LABS_SPEECH_TO_SPEECH_OUTPUT_FORMAT.MP3_44100_192,
+    } = body;
+
+    this.loggerService.log(
+      JSON.stringify({
+        message: 'createSpeechToSpeech: Starting with provided body',
+        body,
+      }),
+    );
+
+    try {
+      const formData = new FormData();
+      const fileExtention = extractExtension(audio_path);
+      formData.append('audio', createReadStream(audio_path), {
+        filename: `${uuid()}.${fileExtention}`,
+        contentType: `audio/${fileExtention}`,
+      });
+      formData.append(
+        'model_id',
+        SPEECH_TO_SPEECH_MODEL.Eleven_Multilingual_sts_v2,
+      );
+
+      this.loggerService.log(
+        JSON.stringify({
+          message: 'createSpeechToSpeech: FormData Completed',
+          formData,
+        }),
+      );
+
+      const resp = await lastValueFrom(
+        this.httpService.post(
+          `${this.apiUrl}/speech-to-speech/${voice_id}/stream`,
+          formData,
+          {
+            headers: {
+              'xi-api-key': this.apiKey,
+              ...formData.getHeaders(),
+            },
+          },
+        ),
+      ).then((res) => res.data);
+
+      this.loggerService.log(
+        'createSpeechToSpeech: Successfully created speech to speech response',
+      );
+
+      return resp;
+    } catch (error: any) {
+      this.loggerService.error(
+        JSON.stringify({
+          message: 'createSpeechToSpeech: Error occurred',
           error: error.message,
           response: error.response?.data,
         }),

@@ -3,7 +3,7 @@ import { Video, VideoDocument } from '@/db/schemas/media/video.schema';
 import { ElevenLabsService } from '@/libs/elevenlabs/services/elevenlabs.service';
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model, ObjectId, Schema } from 'mongoose';
+import mongoose, { ObjectId, Schema } from 'mongoose';
 import { DubRequestDto } from '../dto/dub.request.dto';
 import { LoggerService } from '@/common/logger/services/logger.service';
 import { Dubbing } from '@/db/schemas/media/dubbing.schema';
@@ -19,7 +19,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { hmsToSeconds, isValidTimeHMSFormat } from 'utils/time';
 import { responseGenerator } from '@/common/config/helper/response.helper';
 import { Audio, AudioDocument } from '@/db/schemas/media/audio.schema';
-import { readFileSync } from 'fs';
+import { createReadStream, existsSync, readFileSync, unlinkSync } from 'fs';
 import { unlink } from 'fs/promises';
 import { extname, join } from 'path';
 import { VIDEO_TYPES } from '@/common/constants/video.enum';
@@ -52,6 +52,9 @@ import {
 } from '@/common/prompt';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { SpeechToSpeechDTO } from '../dto/speech-to-speech';
+import { VoiceChange } from '@/db/schemas/media/voice-change.schema';
+import { SoftDeleteModel as Model } from 'mongoose-delete';
 
 @Injectable()
 export class AudioService {
@@ -73,6 +76,7 @@ export class AudioService {
     private audioAnalyzeModel: Model<AudioAnalyze>,
     @InjectModel(Dubbing.name) private dubbingModel: Model<Dubbing>,
     @InjectModel(Voice.name) private voiceModel: Model<Voice>,
+    @InjectModel(VoiceChange.name) private voiceChangeModel: Model<VoiceChange>,
     @InjectModel(Inquiry.name) private inquiryModel: Model<Inquiry>,
     @InjectQueue(DUBBING_QUEUE) private dubbingQueue: Queue,
   ) {}
@@ -176,7 +180,6 @@ export class AudioService {
 
       return resp;
     } catch (error) {
-      console.log({ error });
       this.loggerService.error(
         JSON.stringify({
           message: 'addSharedVoiceInLibrary: Error occurred',
@@ -295,7 +298,6 @@ export class AudioService {
         url: s3ViewUrl,
       });
     } catch (error) {
-      console.log({ error });
       this.loggerService.error(
         JSON.stringify({
           message: 'uploadAudio: Error occurred',
@@ -648,6 +650,116 @@ export class AudioService {
       throw new HttpException('Server failed', HttpStatus.BAD_GATEWAY, {
         cause: error,
       });
+    }
+  }
+
+  async getVoiceChangesList(userId: string) {
+    try {
+      const changedVoices = await this.voiceChangeModel.find({
+        user_id: userId,
+      });
+
+      return changedVoices.map((data) => ({
+        ...data.toObject(),
+        changed_voice_url: this.storageService.get(data.changed_voice_url),
+        url: this.storageService.get(data.url),
+      }));
+    } catch (error: any) {
+      this.loggerService.error(
+        JSON.stringify({
+          message:
+            'getVoiceChangesList: Error occurred during fetching all list',
+          error: error.message,
+        }),
+      );
+      throw new HttpException('Server failed', HttpStatus.BAD_GATEWAY, {
+        cause: error,
+      });
+    }
+  }
+
+  async speechToSpeech(userId: string, body: SpeechToSpeechDTO) {
+    const { audio_url, output_format, voice_id, name } = body;
+
+    this.loggerService.log(
+      JSON.stringify({
+        message: `speechToSpeech: Starting speech to speech conversion for user ${userId}`,
+        data: body,
+      }),
+    );
+
+    const preSignedUrl = this.storageService.get(audio_url);
+    // Download the audio file from the URL and get the local file path
+    const outputPath =
+      await this.storageService.downloadFileFromUrl(preSignedUrl);
+    this.loggerService.log(
+      `speechToSpeech: Successfully downloaded audio file to ${outputPath}`,
+    );
+
+    try {
+      // Pass the audio stream to the ElevenLabs service
+      const responseStream = await this.elevenLabsService.createSpeechToSpeech({
+        output_format,
+        voice_id,
+        audio_path: outputPath,
+      });
+
+      this.loggerService.log(
+        'speechToSpeech: Successfully created speech to speech stream',
+      );
+
+      // Generate a unique file name for the output
+      const fileName = `${userId}-${uuid()}.mp3`;
+      this.loggerService.log(`speechToSpeech: Generated file name ${fileName}`);
+
+      // Upload the generated audio stream to S3
+      const s3FilePath = await this.storageService.uploadStream(
+        responseStream,
+        fileName,
+        'audio/mp3',
+      );
+
+      this.loggerService.log(
+        `speechToSpeech: Successfully uploaded file to S3 at path ${s3FilePath}`,
+      );
+
+      const newVoiceChangeDoc = new this.voiceChangeModel({
+        url: audio_url,
+        changed_voice_url: s3FilePath,
+        user_id: userId,
+        name,
+        voice_id,
+      });
+
+      await newVoiceChangeDoc.save();
+
+      // Generate a pre-signed URL for accessing the uploaded file
+      const preSignedUrl = this.storageService.get(s3FilePath);
+
+      return {
+        ...newVoiceChangeDoc.toObject(),
+        changed_voice_url: preSignedUrl,
+      };
+    } catch (error: any) {
+      this.loggerService.error(
+        JSON.stringify({
+          message:
+            'speechToSpeech: Error occurred during speech to speech conversion',
+          error: error.message,
+        }),
+      );
+
+      throw new HttpException('Server failed', HttpStatus.BAD_GATEWAY, {
+        cause: error,
+      });
+    } finally {
+      // Clean up the local file after processing
+      if (existsSync(outputPath)) {
+        unlinkSync(outputPath);
+        this.loggerService.log(
+          `speechToSpeech: Cleaned up local file at ${outputPath}`,
+        );
+      }
     }
   }
 
@@ -1251,7 +1363,6 @@ export class AudioService {
         .sort({ _id: -1 })
         .lean();
 
-      console.log(audioList);
       const diagnosedAudioList = audioList.map((item) => ({
         id: item._id,
         name: item.audio_id?.name || item.video_id?.name || 'Unnamed',

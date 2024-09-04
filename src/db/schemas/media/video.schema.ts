@@ -41,6 +41,12 @@ export class Video extends Document {
   @Prop({ type: String })
   url: string; // video URL
 
+  @Prop({ type: String })
+  youtube_download_url: string; // S3 URL for the youtube video
+
+  @Prop({ type: String })
+  audio_url: string; // S3 URL for the youtube video
+
   @Prop({ type: Object })
   metadata: VideoMetaData;
 
@@ -50,10 +56,24 @@ export class Video extends Document {
   @Prop({ type: Date, default: Date.now() })
   updated_at: Date;
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId }], ref: 'Dubbing',default:[] })
+  @Prop({ type: String })
+  transcription: string;
+
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'VideoShort' }] })
+  shorts: MongooseSchema.Types.ObjectId[];
+
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId }],
+    ref: 'Dubbing',
+    default: [],
+  })
   dubbings: MongooseSchema.Types.ObjectId[];
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId }], ref: 'AudioEnhance',default:[] })
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId }],
+    ref: 'AudioEnhance',
+    default: [],
+  })
   audio_enhancments: MongooseSchema.Types.ObjectId[];
 }
 

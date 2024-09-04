@@ -18,6 +18,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { StorageModule } from '@/common/storage/storage.module';
 import { ResearchModule } from './research/research.module';
+import { ImageModule } from './image/image.module';
 
 type NestModuleImport =
   | Type<any>
@@ -61,7 +62,8 @@ const appModules: NestModuleImport[] = [
     PublicModule,
     AudioModule,
     StorageModule,
-    ResearchModule
+    ResearchModule,
+    ImageModule
   ],
   controllers: [AppController],
   providers: [AppService],

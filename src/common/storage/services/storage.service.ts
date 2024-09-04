@@ -6,12 +6,16 @@ import { createWriteStream, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { extname, join } from 'path';
 import { lastValueFrom } from 'rxjs';
 import { v4 as uuid } from 'uuid';
-import * as ytdl from 'ytdl-core';
+// import * as ytdl from 'ytdl-core';
 import { exec } from 'child_process';
 import { LoggerService } from '@/common/logger/services/logger.service';
 import { getSignedUrl } from '@aws-sdk/cloudfront-signer';
-import { randomBytes } from 'crypto';
-import { HOURS } from '@/common/constants/time';
+import * as ytdl from '@distube/ytdl-core';
+
+import * as ffmpeg from 'fluent-ffmpeg';
+import * as ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 @Injectable()
 export class StorageService {
@@ -82,7 +86,10 @@ export class StorageService {
     }
   }
 
-  async downloadHQYouTubeVideo(url: string): Promise<string> {
+  async downloadHQYouTubeVideo(
+    url: string,
+    keepAudio: boolean = false,
+  ): Promise<{ video: string; audio: string }> {
     try {
       const videoInfo = await ytdl.getInfo(url);
       const videoTitle = this.removeSpecialCharacters(
@@ -93,7 +100,7 @@ export class StorageService {
         'StorageService',
       );
 
-      const uploadDir = join(__dirname, '..', '..', 'uploads');
+      const uploadDir = join(__dirname, '..', '..', '../..', 'uploads');
       this.createDirectoryIfNotExists(uploadDir);
 
       const videoFilePath = join(uploadDir, `${videoTitle}_video.mp4`);
@@ -106,7 +113,7 @@ export class StorageService {
           '',
           'StorageService',
         );
-        return outputFilePath;
+        return { video: outputFilePath, audio: audioFilePath };
       }
 
       this.loggerService.log('Downloading video stream...', 'StorageService');
@@ -149,13 +156,14 @@ export class StorageService {
               'StorageService',
             );
             unlinkSync(videoFilePath);
-            unlinkSync(audioFilePath);
+            if (!keepAudio) unlinkSync(audioFilePath);
+
             resolve();
           }
         });
       });
 
-      return outputFilePath;
+      return { video: outputFilePath, audio: audioFilePath };
     } catch (error: any) {
       this.loggerService.error(
         `Error processing video: ${error.message}`,
@@ -183,7 +191,7 @@ export class StorageService {
         );
         const youtubeStream = ytdl(url, {
           quality: 'highestvideo',
-          filter: 'videoandaudio',
+          filter: 'audioandvideo',
         });
         youtubeStream.pipe(writer);
       } else {
@@ -220,6 +228,48 @@ export class StorageService {
       );
       throw new Error(JSON.stringify(error));
     }
+  }
+
+  async extractAudio(videoPath: string, filename: string): Promise<string> {
+    if (!videoPath || !filename) return;
+
+    const audioPath = join(__dirname, '..', '..', '../..', 'uploads', filename);
+
+    try {
+      this.loggerService.log(
+        `Extracting audio from video: ${videoPath}`,
+        'StorageService',
+      );
+
+      await this.extractAudioFromFile(videoPath, audioPath);
+
+      this.loggerService.log(
+        `Audio extracted to: ${audioPath}`,
+        'StorageService',
+      );
+      return audioPath;
+    } catch (error: any) {
+      this.loggerService.error(
+        `Error extracting audio: ${error.message}`,
+        'StorageService',
+      );
+      throw new Error(JSON.stringify(error));
+    }
+  }
+
+  private async extractAudioFromFile(
+    videoPath: string,
+    audioPath: string,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      ffmpeg(videoPath)
+        .noVideo()
+        .audioCodec('copy')
+        .output(audioPath)
+        .on('end', resolve)
+        .on('error', reject)
+        .run();
+    });
   }
 
   get(filename: string) {
@@ -337,5 +387,12 @@ export class StorageService {
       writer.on('finish', () => resolve(tempFilePath));
       writer.on('error', reject);
     });
+  }
+
+  async downloadImageAsBuffer(url: string): Promise<Buffer> {
+    const response = await lastValueFrom(
+      this.httpService.get(url, { responseType: 'arraybuffer' }),
+    );
+    return Buffer.from(response.data);
   }
 }

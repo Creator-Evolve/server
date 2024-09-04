@@ -78,7 +78,6 @@ export class DolbyService {
 
       return token;
     } catch (error: any) {
-      console.log({ error: error.response?.data || error.message });
       this.loggerService.log(
         JSON.stringify({
           message: 'getAccessToken: Error occurred',
@@ -177,8 +176,6 @@ export class DolbyService {
 
       return response.data;
     } catch (error: any) {
-      console.log(error)
-      console.log(error.response.data)
       this.loggerService.log(
         JSON.stringify({
           message: 'enhanceAudio: Error occurred',

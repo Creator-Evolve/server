@@ -15,6 +15,7 @@ export const validationSchema = Joi.object({
   REDIS_PORT: Joi.string().required(),
   REDIS_PASSWORD: Joi.string().required(),
   OPEN_AI_API_KEY: Joi.string().required(),
+  ANTHROPIC_API_KEY: Joi.string().required(),
   PERPLEXITY_API_KEY: Joi.string().required(),
   PERPLEXITY_API_URL: Joi.string().required(),
   PERPLEXITY_DEFAULT_MODEL: Joi.string().required(),
@@ -42,4 +43,8 @@ export const validationSchema = Joi.object({
   DOLBY_API_KEY: Joi.string().required(),
   DOLBY_API_SECRET: Joi.string().required(),
   DOLBY_MEDIA_URI: Joi.string().required(),
+  
+  STABLE_DIFFUSION_API_KEY: Joi.string().required(),
+  STABLE_DIFFUSION_API_URL: Joi.string().required(),
+  
 });
