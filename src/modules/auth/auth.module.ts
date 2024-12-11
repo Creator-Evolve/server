@@ -9,12 +9,19 @@ import { ConfigService } from '@nestjs/config';
 import { MailModule } from '@/common/mail/mail.module';
 import { GoogleStrategy } from 'strategy/google.strategy';
 import { YoutubeStrategy } from 'strategy/youtube.strategy';
+import { CreditAccount, CreditAccountSchema } from '@/db/schemas/users/credit/credit.schema';
 
 @Module({
   imports: [
     UserModule,
     MailModule,
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      {
+        name: CreditAccount.name,
+        schema: CreditAccountSchema,
+      },
+    ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

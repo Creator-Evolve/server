@@ -34,6 +34,8 @@ export interface V4StyleProps {
   marginR?: number;
   marginV?: number;
   encoding?: number;
+  posX?: number; // X coordinate for positioning
+  posY?: number; // Y coordinate for positioning
 }
 
 export function convertHexToV4StyleColor(hex: string): string {
@@ -73,6 +75,8 @@ export function generateV4Style(
     marginR: 10,
     marginV: 10,
     encoding: 1,
+    posX: undefined, // Default value for X position
+    posY: undefined, // Default value for Y position
   };
 
   // Merge default props with provided props
@@ -170,22 +174,32 @@ export function generateV4Style(
   const formatLine = `Format: ${format.join(', ')}`;
   const styleLine = `Style: ${styleValues.join(',')}`;
 
-  return `${formatLine}\n${styleLine}`;
+  // If the user has provided specific coordinates, use \pos(x, y)
+  let posLine = '';
+  if (mergedProps.posX !== undefined && mergedProps.posY !== undefined) {
+    posLine = `\\pos(${mergedProps.posX},${mergedProps.posY})`;
+  }
+
+  return `${formatLine}\n${styleLine}\n${posLine}`;
 }
 
-// Example usage
+// // Example usage with position
 // const exampleStyle = generateV4Style({
-//   primaryColor: Color.Red,
+//   primaryColor: V4StyleColorEnum.Red,
 //   bold: true,
 //   fontSize: 24,
+//   posX: 100,
+//   posY: 200,
 // });
 
-// Example with custom format
+// // Example with custom format and position
 // const customFormatStyle = generateV4Style(
 //   {
-//     primaryColor: Color.Blue,
+//     primaryColor: V4StyleColorEnum.Blue,
 //     italic: true,
+//     posX: 300,
+//     posY: 400,
 //   },
-//   ['Name', 'PrimaryColour', 'Italic', 'Fontsize'],
+//   ['Name', 'PrimaryColour', 'Italic', 'Fontsize', 'Alignment'],
 // );
 

@@ -29,9 +29,14 @@ export class UserService {
   }
 
   async getUserById(id: string) {
-    const user = await this.userModel.findById(id).lean();
+    const user = await this.userModel
+      .findById(id)
+      .populate('credit_account_id')
+      .lean();
 
     if (!user) return null;
+    user['credit_account'] = user.credit_account_id;
+    delete user.credit_account_id;
 
     return user;
   }

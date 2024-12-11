@@ -24,7 +24,7 @@ import { BullModule } from '@nestjs/bull';
         },
         template: {
           dir: join(__dirname, 'templates'),
-          adapter: new PugAdapter(),
+          adapter: new PugAdapter(),  
           options: {
             strict: true,
           },

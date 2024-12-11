@@ -14,7 +14,6 @@ import { Research } from '../research/research.schema';
 import { Image } from '../media/image.schema';
 
 export type UserDocument = HydratedDocument<User>;
-
 @Schema()
 export class User extends Document {
   @Prop({ required: true, type: String })
@@ -42,8 +41,8 @@ export class User extends Document {
   @Prop({ required: true, default: false, type: Boolean })
   is_verified: boolean;
 
-  @Prop({ type: Number, required: true, default: 0 })
-  credits: number;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'CreditAccount' })
+  credit_account_id: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: String })
   password: string;

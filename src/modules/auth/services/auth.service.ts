@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { LoginDTO } from '../dto/login.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from '@/db/schemas/users/user.schema';
-import { Model } from 'mongoose';
+import { Model, ObjectId } from 'mongoose';
 import { compare, hash } from 'bcrypt';
 import { SignUpDto } from '../dto/signup.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -14,11 +14,17 @@ import { responseGenerator } from '@/common/config/helper/response.helper';
 import { LoggerService } from '@/common/logger/services/logger.service';
 import { GoogleResponseDTO } from '../dto/google-response.dto';
 import { YoutubeResponseDTO } from '../dto/youtube-response.dto';
+import {
+  CreditAccount,
+  CreditAccountDocument,
+} from '@/db/schemas/users/credit/credit.schema';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(CreditAccount.name)
+    private creditModel: Model<CreditAccountDocument>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private jwtService: JwtService,
     private mailService: MailService,
@@ -35,7 +41,9 @@ export class AuthService {
       }),
     );
 
-    const user = await this.userModel.findOne({ email });
+    const user = await this.userModel
+      .findOne({ email })
+      .populate('credit_account_id');
     if (!user) {
       this.loggerService.error(
         JSON.stringify({
@@ -64,7 +72,7 @@ export class AuthService {
       google_id: user.google_id,
       name: user.name,
       email: user.email,
-      credits: user.credits,
+      credit_account: user.credit_account_id,
       phone: user.phone,
       _id: user._id,
       is_verified: user.is_verified,
@@ -161,7 +169,9 @@ export class AuthService {
       }),
     );
     try {
-      const dbUser = await this.userModel.findOne({ email: body.email });
+      const dbUser = await this.userModel
+        .findOne({ email: body.email })
+        .populate('credit_account_id');
 
       if (dbUser) {
         const payload = {
@@ -169,7 +179,7 @@ export class AuthService {
           google_id: dbUser.google_id,
           name: dbUser.name,
           email: dbUser.email,
-          credits: dbUser.credits,
+          credit_account: dbUser.credit_account_id,
           phone: dbUser.phone,
           is_verified: dbUser.is_verified,
           _id: dbUser._id,
@@ -193,6 +203,13 @@ export class AuthService {
       });
       await newUser.save();
 
+      const newCreditAccount = new this.creditModel({
+        user_id: newUser._id,
+        balance: 0,
+        account_id: newUser._id,
+      });
+      await newCreditAccount.save();
+
       const payload = {
         sub: newUser._id,
         google_id: newUser.google_id,
@@ -200,7 +217,7 @@ export class AuthService {
         email: newUser.email,
         roles: newUser.roles,
         access_code: newUser.access_code,
-        credits: newUser.credits,
+        credit_account: newCreditAccount,
         phone: newUser.phone,
         _id: newUser._id,
         is_verified: newUser.is_verified,
@@ -244,7 +261,7 @@ export class AuthService {
         google_id: user.google_id,
         name: user.name,
         email: user.email,
-        credit: user.credits,
+        credit_account_id: user.credit_account_id,
         phone: user.phone,
         _id: user._id,
         is_verified: user.is_verified,
@@ -302,7 +319,15 @@ export class AuthService {
       );
     }
 
+    const creditAccount = await new this.creditModel({
+      user_id: user._id,
+      balance: 0,
+      account_id: user._id, // TODO: change the account number generation logic
+    }).save();
+    await creditAccount.save();
+
     user.is_verified = true;
+    user.credit_account_id = creditAccount._id as unknown as ObjectId;
     await user.save();
     await this.cacheManager.del(userId);
 

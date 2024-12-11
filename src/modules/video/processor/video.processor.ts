@@ -413,7 +413,7 @@ export class VideoProcessorService {
     });
   }
 
-  private getVideoDimension(
+  getVideoDimension(
     videoPath: string,
   ): Promise<{ width: number; height: number }> {
     return new Promise((resolve, reject) => {

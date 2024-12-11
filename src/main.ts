@@ -7,7 +7,7 @@ import helmet from 'helmet';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ResponseInterceptor } from 'interceptors/response.interceptor';
 import { HttpExceptionInterceptor as HttpExceptionFilter } from '@/common/filters/http-exception.filter';
-import { AppClusterService } from './cluster';
+// import { AppClusterService } from './cluster';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

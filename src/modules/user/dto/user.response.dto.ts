@@ -1,9 +1,11 @@
+import { CreditAccountDocument } from '@/db/schemas/users/credit/credit.schema';
 import { Expose } from 'class-transformer';
 import {
   IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsPhoneNumber,
   IsString,
 } from 'class-validator';
@@ -32,7 +34,12 @@ export class UserResponseDto {
   @IsNumber()
   @IsNotEmpty()
   @Expose()
-  credits: string;
+  credit_account_id: string;
+
+  @IsObject()
+  @IsNotEmpty()
+  @Expose()
+  credit_account: CreditAccountDocument;
 
   @IsBoolean()
   @IsNotEmpty()

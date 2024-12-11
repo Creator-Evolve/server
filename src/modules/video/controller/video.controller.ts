@@ -61,8 +61,16 @@ export class VideoController {
 
   @Post('upload/url')
   @Roles(ROLE.USER)
-  async uploadVideoUrl(@Req() req: any, @Body() body: UploadVideoDTO) {
-    return this.videoService.uploadVideoUrl(req.user.sub, body);
+  async uploadVideoUrl(
+    @Req() req: any,
+    @Query('store') store: string,
+    @Body() body: UploadVideoDTO,
+  ) {
+    return this.videoService.uploadVideoUrl(
+      req.user.sub,
+      body,
+      store === 'true',
+    );
   }
 
   @Post('tl/upload/youtube')
