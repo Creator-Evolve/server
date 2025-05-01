@@ -6,6 +6,7 @@ import { extractExtension } from 'utils';
 import { LoggerService } from '@/common/logger/services/logger.service';
 
 export enum ANTHROPIC_MODEL {
+  CLAUDE_3_7_SONNET = 'claude-3-7-sonnet',
   CLAUDE_SONNET_3_POINT_5 = 'claude-3-5-sonnet-20240620',
   CLAUDE_3_HAIKU = 'claude-3-haiku-20240307',
 }

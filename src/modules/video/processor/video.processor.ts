@@ -1,6 +1,8 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+// Use require for packages without explicit type declarations
+const ffprobeInstaller = require('@ffprobe-installer/ffprobe');
 import { join } from 'path';
 import { secondsToHms } from '../helper/convertSecsToHS';
 import { LoggerService } from '@/common/logger/services/logger.service';
@@ -13,6 +15,7 @@ import { generateV4Style, V4StyleColorEnum, V4StyleProps } from 'utils/v4Style';
 import { generateCustomAssContent } from '../helper/generateCustomAss';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 interface ISegment {
   start: number;

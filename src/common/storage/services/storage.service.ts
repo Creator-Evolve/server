@@ -11,10 +11,11 @@ import { exec } from 'child_process';
 import { LoggerService } from '@/common/logger/services/logger.service';
 import { getSignedUrl } from '@aws-sdk/cloudfront-signer';
 import * as ytdl from '@distube/ytdl-core';
-import HttpsProxyAgent from 'https-proxy-agent';
-import HttpProxyAgent from 'http-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { HttpProxyAgent } from 'http-proxy-agent';
 import * as https from 'https';
 import * as http from 'http';
+import { getYouTubeVideoInfo, getYouTubeVideoStream } from '@/modules/video/utils/youtube-captcha-bypass';
 
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
@@ -71,8 +72,8 @@ export class StorageService {
     return {
       proxy: proxyUrl,
       // Standard http/https agents for other uses
-      httpAgent: new HttpProxyAgent.HttpProxyAgent(proxyUrl),
-      httpsAgent: new HttpsProxyAgent.HttpsProxyAgent(proxyUrl)
+      httpAgent: new HttpProxyAgent(proxyUrl),
+      httpsAgent: new HttpsProxyAgent(proxyUrl)
     };
   }
 
@@ -145,22 +146,8 @@ export class StorageService {
         })
       );
       
-      const proxyAgents = this.getProxyAgent();
-      
-      // Configure ytdl options with correct proxy format
-      const options = {
-        requestOptions: {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
-          },
-        },
-      };
-      
-      // Set the proxy via environment variables before calling ytdl
-      process.env.HTTP_PROXY = proxyAgents.proxy;
-      process.env.HTTPS_PROXY = proxyAgents.proxy;
-      
-      const videoInfo = await ytdl.getInfo(url, options);
+      // Use the enhanced YouTube video info retrieval that bypasses CAPTCHA
+      const videoInfo = await getYouTubeVideoInfo(url);
       const videoTitle = this.removeSpecialCharacters(
         videoInfo.videoDetails.title,
       );
@@ -194,9 +181,12 @@ export class StorageService {
           data: videoTitle,
         })
       );
+      
       const videoFormat = ytdl.chooseFormat(videoInfo.formats, {
         quality: 'highestvideo',
       });
+      
+      // Use the enhanced YouTube video stream method that bypasses CAPTCHA
       const videoStream = ytdl.downloadFromInfo(videoInfo, {
         format: videoFormat,
         requestOptions: {
@@ -205,6 +195,7 @@ export class StorageService {
           },
         },
       });
+      
       videoStream.pipe(createWriteStream(videoFilePath));
       await new Promise((resolve) => videoStream.on('end', resolve));
 
@@ -214,9 +205,12 @@ export class StorageService {
           data: videoTitle,
         })
       );
+      
       const audioFormat = ytdl.chooseFormat(videoInfo.formats, {
         quality: 'highestaudio',
       });
+      
+      // Use the enhanced YouTube video stream method that bypasses CAPTCHA
       const audioStream = ytdl.downloadFromInfo(videoInfo, {
         format: audioFormat,
         requestOptions: {
@@ -225,6 +219,7 @@ export class StorageService {
           },
         },
       });
+      
       audioStream.pipe(createWriteStream(audioFilePath));
       await new Promise((resolve) => audioStream.on('end', resolve));
 
@@ -234,7 +229,20 @@ export class StorageService {
           data: videoTitle,
         })
       );
-      const mergeCommand = `ffmpeg -i "${videoFilePath}" -i "${audioFilePath}" -c:v copy -c:a aac "${outputFilePath}"`;
+      
+      // Use the full path to ffmpeg executable from the installed package
+      const ffmpegPath = ffmpegInstaller.path;
+      
+      // Construct the ffmpeg command with full path
+      const mergeCommand = `"${ffmpegPath}" -i "${videoFilePath}" -i "${audioFilePath}" -c:v copy -c:a aac "${outputFilePath}"`;
+      
+      this.loggerService.log(
+        JSON.stringify({
+          message: 'Using FFmpeg path',
+          data: ffmpegPath,
+        })
+      );
+      
       await new Promise<void>((resolve, reject) => {
         exec(mergeCommand, (error, stdout, stderr) => {
           if (error) {
@@ -259,16 +267,8 @@ export class StorageService {
         });
       });
 
-      // Clean up environment variables
-      delete process.env.HTTP_PROXY;
-      delete process.env.HTTPS_PROXY;
-
       return { video: outputFilePath, audio: audioFilePath };
     } catch (error: any) {
-      // Clean up environment variables in case of error
-      delete process.env.HTTP_PROXY;
-      delete process.env.HTTPS_PROXY;
-      
       this.loggerService.error(
         `Error processing video: ${error.message}`,
         '',
@@ -298,30 +298,16 @@ export class StorageService {
           })
         );
         
-        const proxyAgents = this.getProxyAgent();
-        
-        // Set the proxy via environment variables
-        process.env.HTTP_PROXY = proxyAgents.proxy;
-        process.env.HTTPS_PROXY = proxyAgents.proxy;
-        
-        const youtubeStream = ytdl(url, {
+        // Use the enhanced YouTube video stream method that bypasses CAPTCHA
+        const youtubeStream = getYouTubeVideoStream(url, {
           quality: 'highestvideo',
           filter: 'audioandvideo',
-          requestOptions: {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
-            },
-          },
         });
         
         youtubeStream.pipe(writer);
         
         return new Promise((resolve, reject) => {
           writer.on('finish', () => {
-            // Clean up environment variables
-            delete process.env.HTTP_PROXY;
-            delete process.env.HTTPS_PROXY;
-            
             this.loggerService.log(
               JSON.stringify({
                 message: 'Video downloaded to',
@@ -331,10 +317,6 @@ export class StorageService {
             resolve(videoPath);
           });
           writer.on('error', (error) => {
-            // Clean up environment variables in case of error
-            delete process.env.HTTP_PROXY;
-            delete process.env.HTTPS_PROXY;
-            
             this.loggerService.error(
               `Error downloading video: ${error.message}`,
               '',
@@ -372,10 +354,6 @@ export class StorageService {
         });
       }
     } catch (error: any) {
-      // Clean up environment variables in case of error
-      delete process.env.HTTP_PROXY;
-      delete process.env.HTTPS_PROXY;
-      
       this.loggerService.error(
         `Error downloading video: ${error.message}`,
         '',

@@ -22,8 +22,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.25.0",
     "@aws-sdk/cloudfront-signer": "^3.598.0",
-    "@distube/ytdl-core": "^4.14.4",
+    "@distube/ytdl-core": "^4.16.9",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
     "@nestjs-modules/mailer": "^1.6.1",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/bull": "^10.1.1",

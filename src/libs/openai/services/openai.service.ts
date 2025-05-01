@@ -30,9 +30,16 @@ export enum OPEN_AI_CHAT_COMPLETION_MODEL {
   GPT_4 = 'gpt-4',
   GPT_4_32k = 'gpt-4-32k',
   GPT_4o = 'gpt-4o',
-  GPT_4o_2024_08_06 = 'gpt-4o-2024-08-06', // cheaper than gpt-4o
+  GPT_4o_2024_08_06 = 'gpt-4o-2024-08-06',
   GPT_4o_Mini = 'gpt-4o-mini',
+  GPT_4_1 = 'gpt-4.1',
+  GPT_4_1_Mini = 'gpt-4.1-mini',
+  GPT_4_1_Nano = 'gpt-4.1-nano',
+  GPT_4_5 = 'gpt-4.5',
+  O3 = 'o3',
+  O4_Mini = 'o4-mini'
 }
+
 
 export enum OPEN_AI_IMAGE_GENERATION_MODEL {
   DALLE_3 = 'dall-e-3',
@@ -96,7 +103,7 @@ export class OpenAIService {
 
       const response = await this.client.chat.completions.create({
         messages,
-        model: model ?? OPEN_AI_CHAT_COMPLETION_MODEL.GPT_4o_2024_08_06,
+        model: model ?? OPEN_AI_CHAT_COMPLETION_MODEL.GPT_4_1,
         response_format: { type: responseFormat },
         temperature,
         max_tokens: maxTokens,
