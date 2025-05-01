@@ -6,13 +6,16 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AppService } from './app.service';
 import { v4 as uuidv4 } from 'uuid';
+import { AuthGuard } from '@/common/guards/auth.guard';
 
 @Controller('/')
+@UseGuards(AuthGuard)
 export class AppController {
   constructor(private appService: AppService) {}
 

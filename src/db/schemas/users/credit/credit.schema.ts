@@ -39,6 +39,7 @@ export class CreditAccount extends Document {
   package_history: {
     package_id: MongooseSchema.Types.ObjectId;
     purchased_at: Date;
+    plan: 'monthly' | 'yearly';
   }[];
 }
 

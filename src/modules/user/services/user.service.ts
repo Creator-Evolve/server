@@ -5,10 +5,15 @@ import { User } from '@/db/schemas/users/user.schema';
 import { UserDto } from '../dto/user.request.dto';
 import * as bcrypt from 'bcrypt';
 import { auth } from 'googleapis/build/src/apis/oauth2';
+import { responseGenerator } from '@/common/config/helper/response.helper';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private jwtService: JwtService,
+  ) {}
 
   async create(userData: UserDto) {
     const { email, password } = userData;
@@ -29,16 +34,43 @@ export class UserService {
   }
 
   async getUserById(id: string) {
-    const user = await this.userModel
-      .findById(id)
-      .populate('credit_account_id')
-      .lean();
+    const user = await this.userModel.findById(id).lean();
 
     if (!user) return null;
-    user['credit_account'] = user.credit_account_id;
-    delete user.credit_account_id;
-
     return user;
+  }
+
+  async getUserByIdRouteHandler(id: string) {
+    const user = await this.userModel
+      .findById(id)
+      .populate({
+        path: 'credit_account_id',
+        model: 'CreditAccount',
+      })
+      .lean();
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    const userObj = user;
+    user['credit_account'] = user['credit_account_id'];
+    user['id'] = user._id.toString();
+    const payload = {
+      sub: user._id,
+      roles: user.roles,
+      access_code: user.access_code,
+      google_id: user.google_id,
+      name: user.name,
+      email: user.email,
+      credit_account: user.credit_account_id,
+      phone: user.phone,
+      is_verified: user.is_verified,
+      is_google_authenticated: user.is_google_authenticated,
+      is_youtube_authenticated: user.is_youtube_authenticated,
+    };
+    user['access_token'] = await this.jwtService.signAsync(payload);
+    delete user['credit_account_id'];
+
+    return responseGenerator('User found', userObj, true);
   }
 
   async saveTokens(

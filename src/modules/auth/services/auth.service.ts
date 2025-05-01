@@ -74,7 +74,6 @@ export class AuthService {
       email: user.email,
       credit_account: user.credit_account_id,
       phone: user.phone,
-      _id: user._id,
       is_verified: user.is_verified,
       is_google_authenticated: user.is_google_authenticated,
       is_youtube_authenticated: user.is_youtube_authenticated,
@@ -89,6 +88,7 @@ export class AuthService {
 
     return responseGenerator('Login Successful', {
       ...user.toObject(),
+      id: user._id.toString(),
       access_token: await this.jwtService.signAsync(payload),
     });
   }
@@ -182,7 +182,7 @@ export class AuthService {
           credit_account: dbUser.credit_account_id,
           phone: dbUser.phone,
           is_verified: dbUser.is_verified,
-          _id: dbUser._id,
+          id: dbUser._id,
           roles: dbUser.roles,
           access_code: dbUser.access_code,
           is_youtube_authenticated: dbUser.is_youtube_authenticated,
@@ -219,7 +219,7 @@ export class AuthService {
         access_code: newUser.access_code,
         credit_account: newCreditAccount,
         phone: newUser.phone,
-        _id: newUser._id,
+        id: newUser._id,
         is_verified: newUser.is_verified,
         is_google_authenticated: newUser.is_google_authenticated,
         is_youtube_authenticated: newUser.is_youtube_authenticated,
@@ -263,7 +263,7 @@ export class AuthService {
         email: user.email,
         credit_account_id: user.credit_account_id,
         phone: user.phone,
-        _id: user._id,
+        id: user._id,
         is_verified: user.is_verified,
         is_youtube_authenticated: user.is_youtube_authenticated,
         is_google_authenticated: user.is_google_authenticated,

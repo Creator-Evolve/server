@@ -17,6 +17,15 @@ export class CreditPackage extends Document {
   @Prop({ type: Number, required: true })
   credits: number;
 
+  @Prop({ type: String })
+  priceId: string; // stripe price id
+
+  @Prop({ type: String })
+  paypal_plan_id: string;
+
+  @Prop({ type: String })
+  paypal_product_id: string;
+
   @Prop({ type: String, required: true })
   name: string;
 

@@ -64,4 +64,24 @@ export class ServiceConfigDTO {
   @IsString()
   @IsNotEmpty()
   AWS_BUCKET_NAME: string;
+
+  @IsString()
+  @IsNotEmpty()
+  RAZORPAY_SECRET: string;
+
+  @IsString()
+  @IsNotEmpty()
+  RAZORPAY_ID: string;
+
+  @IsString()
+  @IsNotEmpty()
+  PAYPAL_CLIENT_URL: string;
+
+  @IsString()
+  @IsNotEmpty()
+  PAYPAL_CLIENT_ID: string;
+
+  @IsString()
+  @IsNotEmpty()
+  PAYPAL_CLIENT_SECRET: string;
 }

@@ -1010,6 +1010,7 @@ export class VideoService {
 
       return finalData;
     } catch (error: any) {
+      console.log(error);
       this.loggerService.error(
         JSON.stringify({
           message: `extractShortContent: Error occurred`,

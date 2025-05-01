@@ -8,7 +8,8 @@ export class AppService {
   constructor(
     private storageService: StorageService,
     private loggerService: LoggerService,
-  ) {}
+  ) {
+  }
 
   async uploadFile(file: Express.Multer.File) {
     this.loggerService.log('uploadFile: Starting file upload process');

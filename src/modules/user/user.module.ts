@@ -19,6 +19,9 @@ import {
   CreditPackageSchema,
 } from '@/db/schemas/users/credit/credit.package';
 import { Model } from 'mongoose';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigService } from '@/common/config/services/config.service';
+import { PaymentModule } from '../payment/payment.module';
 
 @Module({
   imports: [
@@ -37,6 +40,14 @@ import { Model } from 'mongoose';
         schema: CreditPackageSchema,
       },
     ]),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        global: true,
+        secret: configService.get('JWT_SECRET'),
+      }),
+    }),
+    PaymentModule,
   ],
   controllers: [UserController, CreditController],
   providers: [UserService, CreditService],
