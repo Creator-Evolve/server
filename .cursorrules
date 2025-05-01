@@ -1,0 +1,8 @@
+When I say to add logs, I want you to add logs in the this format:
+
+this.loggerService.log(
+    JSON.stringify({
+        message: 'message',
+        data: 'data',
+    })
+)

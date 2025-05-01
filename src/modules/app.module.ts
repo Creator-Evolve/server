@@ -19,6 +19,8 @@ import { AppService } from './app.service';
 import { StorageModule } from '@/common/storage/storage.module';
 import { ResearchModule } from './research/research.module';
 import { ImageModule } from './image/image.module';
+import { JwtService } from '@nestjs/jwt';
+import { PaymentModule } from './payment/payment.module';
 
 type NestModuleImport =
   | Type<any>
@@ -63,9 +65,10 @@ const appModules: NestModuleImport[] = [
     AudioModule,
     StorageModule,
     ResearchModule,
-    ImageModule
+    ImageModule,
+    // PaymentModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtService],
 })
 export class AppModule {}

@@ -53,3 +53,13 @@ export const awsServices = registerAs('AWS', () => ({
   AWS_BUCKET_NAME: process.env['AWS_CLOUDFRONT_DISTRIBUTION'],
   AWS_REGION: process.env['AWS_CLOUDFRONT_DISTRIBUTION'],
 }));
+
+
+export const paymentService=registerAs("payment",()=>({
+  RAZORPAY_ID: process.env["RAZORPAY_ID"],
+  RAZORPAY_SECRET: process.env["RAZORPAY_SECRET"],
+
+  PAYPAL_CLIENT_URL: process.env["PAYPAL_CLIENT_URL"],
+  PAYPAL_CLIENT_ID: process.env["PAYPAL_CLIENT_ID"],
+  PAYPAL_CLIENT_SECRET: process.env["PAYPAL_CLIENT_SECRET"],
+}))

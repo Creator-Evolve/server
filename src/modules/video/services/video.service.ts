@@ -16,7 +16,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Video } from '@/db/schemas/media/video.schema';
 import { TwelveLabsService } from '@/libs/twelvelabs/services/twelvelabs.service';
 import { Model, ObjectId } from 'mongoose';
-import { join } from 'path';
+import { basename, extname, join } from 'path';
 import { unlink } from 'fs/promises';
 import { UploadVideoDTO } from '../dto/upload-video.dtio';
 import { createReadStream, readFileSync } from 'fs';
@@ -26,7 +26,7 @@ import {
   IExtractedShortFormContentResponse,
   ISegmentCrop,
   VideoProcessorService,
-} from './processor.service';
+} from '../processor/video.processor';
 import {
   CHAT_COMPLETION_RESPONSE_FORMAT,
   OPEN_AI_CHAT_COMPLETION_MODEL,
@@ -112,7 +112,12 @@ export class VideoService {
         ? this.storageService.get(video.url)
         : video.url;
 
-    return { ...video, url: videoUrl };
+    return {
+      ...video,
+      url: videoUrl,
+      youtube_download_url:
+        this.storageService.get(video.youtube_download_url) || '',
+    };
   }
 
   async uploadVideo(userId: string, video: Express.Multer.File) {
@@ -218,7 +223,7 @@ export class VideoService {
     }
   }
 
-  async uploadVideoUrl(userId: string, body: UploadVideoDTO) {
+  async uploadVideoUrl(userId: string, body: UploadVideoDTO, store: boolean) {
     const { url } = body;
     try {
       this.loggerService.log(
@@ -228,12 +233,38 @@ export class VideoService {
         }),
       );
 
+      let youtube_download_url: string = '';
+      if (store) {
+        const localVideoPath =
+          await this.storageService.downloadHQYouTubeVideo(url);
+
+        const filename = basename(localVideoPath.video); // e.g., "video.mp4"
+        const fileExtension = extname(localVideoPath.video); // e.g., ".mp4"
+
+        // Determine the MIME type based on the file extension
+        const mimeType = mime.lookup(fileExtension); // e.g., "video/mp4"
+
+        // Read the file into a buffer
+        const fileBuffer = readFileSync(localVideoPath.video);
+
+        // Upload the file to S3
+        youtube_download_url = await this.storageService.upload(
+          fileBuffer,
+          filename,
+          mimeType || 'application/octet-stream', // Fallback MIME type
+        );
+
+        // Clean up the local file
+        await unlink(localVideoPath.video);
+      }
+
       const video = new this.videoModel({
         user_id: userId,
         type: VIDEO_TYPES.YOUTUBE,
         thumbnail: body.thumbnail,
         name: body.name,
         url,
+        youtube_download_url,
       });
 
       await video.save();
@@ -979,6 +1010,7 @@ export class VideoService {
 
       return finalData;
     } catch (error: any) {
+      console.log(error);
       this.loggerService.error(
         JSON.stringify({
           message: `extractShortContent: Error occurred`,

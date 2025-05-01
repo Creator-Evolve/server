@@ -1,18 +1,22 @@
-import { Expose } from 'class-transformer';
+import { CreditAccountDocument } from '@/db/schemas/users/credit/credit.schema';
+import { Expose, Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEmail,
+  IsMongoId,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsPhoneNumber,
   IsString,
 } from 'class-validator';
+import { isObjectIdOrHexString } from 'mongoose';
 
 export class UserResponseDto {
   @IsString()
   @IsNotEmpty()
   @Expose()
-  _id: string;
+  id: string;
 
   @IsString()
   @IsNotEmpty()
@@ -32,7 +36,12 @@ export class UserResponseDto {
   @IsNumber()
   @IsNotEmpty()
   @Expose()
-  credits: string;
+  credit_account_id: string;
+
+  @IsObject()
+  @IsNotEmpty()
+  @Expose()
+  credit_account: CreditAccountDocument;
 
   @IsBoolean()
   @IsNotEmpty()

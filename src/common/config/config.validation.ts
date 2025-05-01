@@ -43,8 +43,14 @@ export const validationSchema = Joi.object({
   DOLBY_API_KEY: Joi.string().required(),
   DOLBY_API_SECRET: Joi.string().required(),
   DOLBY_MEDIA_URI: Joi.string().required(),
-  
+
   STABLE_DIFFUSION_API_KEY: Joi.string().required(),
   STABLE_DIFFUSION_API_URL: Joi.string().required(),
-  
+
+  RAZORPAY_ID: Joi.string().required(),
+  RAZORPAY_SECRET: Joi.string().required(),
+
+  PAYPAL_CLIENT_URL: Joi.string().required(),
+  PAYPAL_CLIENT_ID: Joi.string().required(),
+  PAYPAL_CLIENT_SECRET: Joi.string().required(),
 });
